@@ -1,0 +1,1 @@
+Excel-Spalten: Symbol,PrevOpen,PrevHigh,PrevLow,PrevClose,Open,High,Low,Close
