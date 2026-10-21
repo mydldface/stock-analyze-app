@@ -20,6 +20,13 @@ public class AnalysisResult {
      */
     private double currentPrice;
 
+    private double prevOpen;
+
+    private double prevHigh;
+
+    private double prevLow;
+
+    private double prevClose;
     /**
      * OHLC für Chart
      */

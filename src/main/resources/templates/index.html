@@ -82,6 +82,40 @@
             Candlestick Chart
         </div>
         <div class="card-body">
+            <div class="mb-3">
+                <label class="form-label">
+                    Aktie auswählen
+                </label>
+                <select
+                        id="symbolSelect"
+                        class="form-select">
+                    <option value="">
+                        Bitte wählen...
+                    </option>
+                </select>
+            </div>
+            <!-- Signals -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    Aktuelles Signal
+                </div>
+
+                <div class="card-body text-center py-3">
+                    <h3 id="selectedSymbol"
+                        class="mb-2">
+                    </h3>
+                    <div id="selectedPattern"
+                         class="mb-2 fw-bold fs-5">
+                    </div>
+                    <div id="selectedSignal">
+                    </div>
+                </div>
+            </div>
+            <!-- Legende -->
+            <div id="candleLegend"
+                 class="text-center small text-muted mb-2">
+            </div>
+
             <div id="chart"></div>
         </div>
     </div>
@@ -117,7 +151,9 @@
     </div>
 </div>
 <script>
-
+    let analysisData = [];
+    let loadedResults = [];
+    let fibLines = [];
     // Chart
 
     const chartContainer =
@@ -128,7 +164,11 @@
             chartContainer,
             {
                 width: chartContainer.clientWidth,
-                height: 500
+                height: 500,
+
+                timeScale: {
+                    rightOffset: 10
+                }
             }
         );
 
@@ -274,6 +314,35 @@
             });
     }
 
+    function fillSymbolSelect(rows) {
+
+        const select =
+            document.getElementById(
+                "symbolSelect"
+            );
+
+        select.innerHTML =
+            '<option value="">Bitte wählen...</option>';
+
+        rows.forEach(row => {
+
+            const option =
+                document.createElement(
+                    "option"
+                );
+
+            option.value =
+                row.symbol;
+
+            option.textContent =
+                row.symbol;
+
+            select.appendChild(
+                option
+            );
+        });
+    }
+
     function fifsSafe(obj,key){
 
         if(!obj){
@@ -366,9 +435,60 @@
 
             console.log("Analyse-Ergebnis:", data);
 
+            analysisData = data;
+
+            loadedResults = data;
+
             renderTable(data);
 
-            renderChart(data);
+            if (data.length > 0) {
+                updateSignalPanel(data[0]);
+                updateChart(data[0]);
+            }
+
+            fillSymbolSelect(data);
+
+            if (data.length > 0) {
+
+                document
+                    .getElementById(
+                        "symbolSelect"
+                    )
+                    .value =
+                    data[0].symbol;
+
+                renderChart(
+                    data[0].symbol
+                );
+            }
+
+            document
+                .getElementById(
+                    "symbolSelect"
+                )
+                .addEventListener(
+                    "change",
+                    function () {
+                        const selectedStock =
+                            loadedResults.find(
+                                r => r.symbol === this.value
+                            );
+                        if (!selectedStock) {
+                            return;
+                        }
+                        updateSignalPanel(
+                            selectedStock
+                        );
+                        updateChart(
+                            selectedStock
+                        );
+                    },
+                    event => {
+                        renderChart(
+                            event.target.value
+                        );
+                    }
+                );
 
         } catch (error) {
 
@@ -417,29 +537,175 @@
         }
     );
 
-    function renderChart(rows) {
+    function renderChart(symbol) {
 
-        const chartData =
-            rows.map((row, index) => ({
+        const stock =
+            analysisData.find(
+                row => row.symbol === symbol
+            );
 
-                time: (index + 1).toString(),
+        if (!stock) {
+            candleSeries.setData([]);
 
-                open: row.open,
+            return;
+        }
 
-                high: row.high,
+        candleSeries.setData([
+            {
+                time: "2026-10-19",
+                open: stock.prevOpen,
+                high: stock.prevHigh,
+                low: stock.prevLow,
+                close: stock.prevClose
+            },
+            {
+                time: "2026-10-20",
+                open: stock.open,
+                high: stock.high,
+                low: stock.low,
+                close: stock.close
+            }
+        ]);
 
-                low: row.low,
+        document.getElementById(
+            "candleLegend"
+        ).innerHTML =
+            "🔴 Linke Kerze = Vortageskerze" +
+            "&nbsp;&nbsp;|&nbsp;&nbsp;" +
+            "🟢 Rechte Kerze = Aktuelle Kerze";
 
-                close: row.close
+        // chart.timeScale().fitContent();
 
-            }));
-
-        candleSeries.setData(
-            chartData
-        );
+        chart.timeScale().setVisibleLogicalRange({
+            from: -3,
+            to: 5
+        });
     }
 
+    function updateSignalPanel(stock) {
+        const pattern =
+            document.getElementById(
+                "selectedPattern"
+            );
 
+        pattern.innerText =
+            stock.pattern;
+
+        if (
+            stock.pattern.includes("BULL")
+        ) {
+            pattern.className =
+                "text-success fw-bold fs-4";
+        }
+        else if (
+            stock.pattern.includes("BEAR")
+        ) {
+            pattern.className =
+                "text-danger fw-bold fs-4";
+        }
+        else {
+            pattern.className =
+                "text-secondary fw-bold fs-4";
+        }
+        document.getElementById(
+            "selectedSymbol"
+        ).textContent =
+            stock.symbol;
+        document.getElementById(
+            "selectedSignal"
+        ).innerHTML =
+            badge(stock.signal);
+    }
+    // clearFibLines
+    function clearFibLines() {
+
+        fibLines.forEach(line => {
+
+            candleSeries.removePriceLine(line);
+
+        });
+
+        fibLines = [];
+    }
+    // drawFibLines
+    function drawFibLines(fibs) {
+
+        clearFibLines();
+
+        if (!fibs) {
+            return;
+        }
+
+        fibLines.push(
+            candleSeries.createPriceLine({
+                price: fibs["23.6"],
+                color: "#ff9800",
+                lineWidth: 2,
+                lineStyle: 0,
+                axisLabelVisible: true,
+                title: "23.6%"
+            })
+        );
+
+        fibLines.push(
+            candleSeries.createPriceLine({
+                price: fibs["38.2"],
+                color: "#2196f3",
+                lineWidth: 2,
+                title: "38.2%"
+            })
+        );
+
+        fibLines.push(
+            candleSeries.createPriceLine({
+                price: fibs["50"],
+                color: "#4caf50",
+                lineWidth: 2,
+                title: "50%"
+            })
+        );
+
+        fibLines.push(
+            candleSeries.createPriceLine({
+                price: fibs["61.8"],
+                color: "#e91e63",
+                lineWidth: 2,
+                title: "61.8%"
+            })
+        );
+
+        fibLines.push(
+            candleSeries.createPriceLine({
+                price: fibs["78.6"],
+                color: "#9c27b0",
+                lineWidth: 2,
+                title: "78.6%"
+            })
+        );
+    }
+    // updateChart
+    function updateChart(stock) {
+        candleSeries.setData([
+            {
+                time: "2026-10-19",
+                open: stock.prevOpen,
+                high: stock.prevHigh,
+                low: stock.prevLow,
+                close: stock.prevClose
+            },
+            {
+                time: "2026-10-20",
+                open: stock.open,
+                high: stock.high,
+                low: stock.low,
+                close: stock.close
+            }
+        ]);
+
+        drawFibLines(
+            stock.fibonacciLevels
+        );
+    }
 </script>
 </body>
 </html>
