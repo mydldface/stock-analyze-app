@@ -45,9 +45,17 @@ public class AnalysisService {
                     candlestickService.detect(
                             stock);
 
+            double volumeRatio = 1.0;
+
+            if (stock.getPrevVolume() > 0) {
+                volumeRatio =
+                        (double) stock.getVolume()
+                                / stock.getPrevVolume();
+            }
+
             String signal =
                     determineSignal(
-                            pattern);
+                            pattern, volumeRatio);
 
             System.out.println(
                     "Pattern = " + pattern +
@@ -60,14 +68,17 @@ public class AnalysisService {
             System.out.println(
                     "Bevor results.add() - Signal = " + signal);
 
+
             results.add(
                     AnalysisResult.builder()
                             .symbol(stock.getSymbol())
                             .currentPrice(stock.getCurrentPrice())
+                            .volumeRatio(volumeRatio)
                             .prevOpen(stock.getPrevOpen())
                             .prevHigh(stock.getPrevHigh())
                             .prevLow(stock.getPrevLow())
                             .prevClose(stock.getPrevClose())
+                            .prevVolume(stock.getPrevVolume())
                             .open(stock.getOpen())
                             .high(stock.getHigh())
                             .low(stock.getLow())
@@ -86,33 +97,38 @@ public class AnalysisService {
     }
 
     private String determineSignal(
-            CandlePattern pattern) {
-
+            CandlePattern pattern,
+            double volumeRatio) {
         return switch (pattern) {
+            case BULLISH_ENGULFING -> {
+                if (volumeRatio >= 1.5) {
+                    yield "STRONG BUY";
+                }
+                yield "BUY";
+            }
+            case BEARISH_ENGULFING -> {
+                if (volumeRatio >= 1.5) {
+                    yield "STRONG SELL";
+                }
+                yield "SELL";
+            }
+            case HAMMER -> {
+                if (volumeRatio >= 1.5) {
+                    yield "STRONG BUY";
+                }
+                yield "BUY";
+            }
+            case SHOOTING_STAR -> {
+                if (volumeRatio >= 1.5) {
+                    yield "STRONG SELL";
+                }
 
-            case BULLISH_ENGULFING ->
-                    "STRONG BUY";
-
-            case BEARISH_ENGULFING ->
-                    "STRONG SELL";
-
-            case HAMMER ->
-                    "BUY";
-
-            case BULLISH ->
-                    "BUY";
-
-            case SHOOTING_STAR ->
-                    "SELL";
-
-            case BEARISH ->
-                    "SELL";
-
-            case DOJI ->
-                    "WATCH";
-
-            default ->
-                    "HOLD";
+                yield "SELL";
+            }
+            case BULLISH -> "BUY";
+            case BEARISH -> "SELL";
+            case DOJI -> "WATCH";
+            default -> "HOLD";
         };
     }
 }

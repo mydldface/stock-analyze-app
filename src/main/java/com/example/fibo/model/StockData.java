@@ -17,6 +17,7 @@ public class StockData {
     private double prevHigh;
     private double prevLow;
     private double prevClose;
+    private long prevVolume;
 
     private double open;
     private double high;

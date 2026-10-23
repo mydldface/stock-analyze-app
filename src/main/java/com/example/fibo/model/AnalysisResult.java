@@ -20,6 +20,7 @@ public class AnalysisResult {
      */
     private double currentPrice;
 
+    private double volumeRatio;
     private double prevOpen;
 
     private double prevHigh;
@@ -27,6 +28,8 @@ public class AnalysisResult {
     private double prevLow;
 
     private double prevClose;
+    private long prevVolume;
+
     /**
      * OHLC für Chart
      */

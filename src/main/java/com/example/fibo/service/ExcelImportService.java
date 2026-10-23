@@ -46,21 +46,24 @@ public class ExcelImportService {
                                     row.getCell(3).getNumericCellValue())
                             .prevClose(
                                     row.getCell(4).getNumericCellValue())
+
+                            .prevVolume(
+                                    (long) row.getCell(5)
+                                            .getNumericCellValue())
                             .open(
-                                    row.getCell(5).getNumericCellValue())
-                            .high(
                                     row.getCell(6).getNumericCellValue())
-                            .low(
+                            .high(
                                     row.getCell(7).getNumericCellValue())
-                            .close(
+                            .low(
                                     row.getCell(8).getNumericCellValue())
-                            .currentPrice(
+                            .close(
                                     row.getCell(9).getNumericCellValue())
+                            .currentPrice(
+                                    row.getCell(10).getNumericCellValue())
                             .volume(
-                                    (long) row.getCell(10)
+                                    (long) row.getCell(11)
                                             .getNumericCellValue())
                             .build();
-
             result.add(stock);
         }
 
